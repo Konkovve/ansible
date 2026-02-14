@@ -1,0 +1,40 @@
+- name: Nginx
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: validation
+      validator:
+        target_port: 8080
+      register: port_data
+
+    - name: install Nginx
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+
+    - name: create
+      file:
+        path: /var/www/html/public_files
+        state: directory
+        mode: '0755'
+
+    - name: proverka
+      copy:
+        content: "123123"
+        dest: "/var/www/html/public_files/lab_{{ item }}.txt"
+      loop: [1, 2, 3]
+
+    - name: test
+      template:
+        src: templates/nginx.conf.j2
+        dest: /etc/nginx/sites-enabled/default
+      vars:
+        nginx_port: "{{ port_data.validated_port }}"
+      notify: Restart Nginx
+
+  handlers:
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted
